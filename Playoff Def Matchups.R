@@ -41,42 +41,42 @@ headers <- c(
   `Accept-Language` = 'en-US,en;q=0.9'
 )
 
-player <- "Joel Embiid"
+player <- "Derrick Rose"
 #get nba playerIds and headshots
 players <- nbastatR::nba_players()
 players <- players %>% select(idPlayer, urlPlayerHeadshot, namePlayer)
 
 playerID <- players %>%
-  dplyr::filter(namePlayer == player)
+  filter(namePlayer == player)
 playerID <- playerID$idPlayer
 
-url <- paste0("https://stats.nba.com/stats/leagueseasonmatchups?DateFrom=&DateTo=&LeagueID=00&OffPlayerID=", playerID, "&Outcome=&PORound=0&PerMode=Totals&Season=2020-21&SeasonType=Playoffs")
+url <- paste0("https://stats.nba.com/stats/leagueseasonmatchups?DateFrom=&DateTo=&LeagueID=00&DefPlayerID=", playerID, "&Outcome=&PORound=0&PerMode=Totals&Season=2020-21&SeasonType=Playoffs")
 
 res <- GET(url = url, add_headers(.headers=headers))
 json_resp <- fromJSON(content(res, "text"))
 Matchups <- data.frame(json_resp$resultSets$rowSet)
 colnames(Matchups) <- json_resp[["resultSets"]][["headers"]][[1]]
-Matchups[c("PLAYER_PTS", "PARTIAL_POSS", "MATCHUP_FGA", "MATCHUP_FG_PCT", "MATCHUP_FTA", "DEF_PLAYER_ID")] <- sapply(Matchups[c("PLAYER_PTS", "PARTIAL_POSS", "MATCHUP_FGA", "MATCHUP_FG_PCT", "MATCHUP_FTA", "DEF_PLAYER_ID")], as.numeric)
-colnames(Matchups)[which(names(Matchups) == "DEF_PLAYER_ID")] <- "idPlayer"
+Matchups[c("PLAYER_PTS", "PARTIAL_POSS", "MATCHUP_FGA", "MATCHUP_FG_PCT", "MATCHUP_FTA", "OFFF_PLAYER_ID")] <- sapply(Matchups[c("PLAYER_PTS", "PARTIAL_POSS", "MATCHUP_FGA", "MATCHUP_FG_PCT", "MATCHUP_FTA", "OFF_PLAYER_ID")], as.numeric)
+colnames(Matchups)[which(names(Matchups) == "OFF_PLAYER_ID")] <- "idPlayer"
 
 Matchups <- Matchups %>%
   mutate(TS = PLAYER_PTS / (2*(MATCHUP_FGA + 0.44*MATCHUP_FTA))) %>%
   mutate(PPP = round(100/PARTIAL_POSS * PLAYER_PTS, 2)) %>%
   mutate(TimePer = PARTIAL_POSS / sum(PARTIAL_POSS)) %>%
-  dplyr::filter(TimePer >= .01)
+  filter(TimePer >= .01)
 
 Matchups$TS[is.nan(Matchups$TS)]<-0
 
 Matchups <- merge(Matchups, players, by="idPlayer")
 
-Matchups <- Matchups %>% select(urlPlayerHeadshot, DEF_PLAYER_NAME, MATCHUP_MIN, TimePer, PLAYER_PTS, MATCHUP_FG_PCT, PPP, TS)
+Matchups <- Matchups %>% select(urlPlayerHeadshot, OFF_PLAYER_NAME, MATCHUP_MIN, TimePer, PLAYER_PTS, MATCHUP_FG_PCT, PPP, TS)
 
 
 Matchups %>%
   arrange(desc(TimePer)) %>%
   gt()  %>%
   cols_label(urlPlayerHeadshot = "",
-             DEF_PLAYER_NAME = "",
+             OFF_PLAYER_NAME = "",
              MATCHUP_MIN = "Time",
              TimePer = "%",
              PLAYER_PTS = "Pts.",
@@ -84,7 +84,7 @@ Matchups %>%
              PPP = "Pts./100",
              TS = "TS%") %>%
   tab_header(
-    title = md(paste0(player, " Offensive Matchups")),
+    title = md(paste0(player, " Defensive Matchups")),
     subtitle = paste0("2021 Playoffs | Updated ", format(Sys.Date(), format="%B %d, %Y"))
   )  %>%
   text_transform(
@@ -136,13 +136,13 @@ Matchups %>%
       )
     ),
     locations = cells_body(
-      rows = DEF_PLAYER_NAME == "League Average"
+      rows = OFF_PLAYER_NAME == "League Average"
     )
   ) %>%
   tab_style(
     style = cell_fill(color = "floralwhite"),
     locations = cells_body(
-      rows = DEF_PLAYER_NAME == "League Average")
+      rows = OFF_PLAYER_NAME == "League Average")
   ) %>%
   tab_options(
     table.background.color = "floralwhite",
@@ -159,4 +159,4 @@ Matchups %>%
     source_notes.font.size = 9,
     footnotes.padding = px(1),
   ) %>%
-  gtsave("Player Matchups.png")
+  gtsave("Def Player Matchups.png")

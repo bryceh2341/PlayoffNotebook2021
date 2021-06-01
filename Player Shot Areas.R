@@ -530,3 +530,92 @@ p <- plot_court(court_themes$light) +
 
 ggdraw(p) + 
   theme(plot.background = element_rect(fill="floralwhite", color = NA))
+
+po <- get_data(203944, "2020-21", "Playoffs")
+reg <- get_data(203944, "2020-21", "Regular Season")
+
+center <- po %>%
+  filter(center_x >= -8 & center_x <= 8)
+right <- po %>%
+  filter(center_x > 8)
+left <- po %>%
+  filter(center_x < -8)
+
+center1 <- reg %>%
+  filter(center_x >= -8 & center_x <= 8)
+right1 <- reg %>%
+  filter(center_x > 8)
+left1 <- reg %>%
+  filter(center_x < -8)
+
+names <- c("Center", "Right", "Left")
+column1 <- c(nrow(center)/nrow(po), nrow(right)/nrow(po), nrow(left)/nrow(po))
+column2 <- c(nrow(center1)/nrow(reg), nrow(right1)/nrow(reg), nrow(left1)/nrow(reg))
+
+combined <- data.frame(names, column1, column2)
+
+combined %>%
+  gt()  %>%
+  cols_label(names = "Location",
+             column1 = "Playoffs",
+             column2 = "Regular") %>%
+  tab_header(
+    title = md("Julius Randle Shot Locations"),
+    subtitle = paste0("2021 Playoffs & Regular Season | Updated ", format(Sys.Date(), format="%B %d, %Y"))
+  )  %>%
+  tab_spanner(
+    label = "Shot Locations",
+    columns = vars(column1, column2)
+  ) %>%
+  fmt_percent(
+    columns = vars(column1, column2),
+    decimals = 1
+  )  %>%
+  data_color(
+    columns = c(column1, column2),
+    colors = scales::col_numeric(
+      palette = paletteer::paletteer_d(
+        palette = "ggsci::green_material"
+      ) %>% as.character(),
+      domain = NULL
+    )
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = vars(column1, column2)
+  ) %>%
+  cols_width(vars(column1, column2) ~ px(45),
+             vars(column1, column2) ~ px(30)) %>%
+  tab_style(
+    style = list(
+      cell_borders(
+        side =  "top",
+        color = 'gray55',
+        weight = px(2)
+      )
+    ),
+    locations = cells_body(
+      rows = names == "League Average"
+    )
+  ) %>%
+  tab_style(
+    style = cell_fill(color = "floralwhite"),
+    locations = cells_body(
+      rows = names == "League Average")
+  ) %>%
+  tab_options(
+    table.background.color = "floralwhite",
+    column_labels.font.size = 10.5,
+    table.font.size = 10,
+    heading.title.font.size  = 24,
+    heading.title.font.weight = 'bold',
+    heading.subtitle.font.size = 11,
+    table.font.names = "Consolas",
+    table.font.color = 'black',
+    table.border.top.color = "transparent",
+    data_row.padding = px(2),
+    footnotes.font.size = 8,
+    source_notes.font.size = 9,
+    footnotes.padding = px(1),
+  ) %>%
+  gtsave("Randle Shot Locations.png")
