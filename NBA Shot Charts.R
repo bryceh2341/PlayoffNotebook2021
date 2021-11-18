@@ -478,7 +478,7 @@ get_data <- function(id, seasons, season_type) {
 
 
 #Get shot data for Damian Lillard (playerId == 203081) from the 2019-20 Regular Season 
-df <- get_data(202710, "2020-21", "Playoffs")
+df <- get_data(201566, "2020-21", "Regular Season")
 
 
 #Load some packages to help with the charts
@@ -525,8 +525,8 @@ p <- plot_court(court_themes$light) +
         plot.subtitle = element_text(hjust = 0.5, size = 9, vjust = -.5), 
         plot.caption = element_text(face = "italic", size = 8), 
         plot.margin = margin(0, -5, 0, -5, "cm")) +
-  labs(title = "Julius Randle",
-       subtitle = "2021 Playoffs")
+  labs(title = "Russell Westbrook",
+       subtitle = "2020-21 Regular Season")
 
 ggdraw(p) + 
   theme(plot.background = element_rect(fill="floralwhite", color = NA))
